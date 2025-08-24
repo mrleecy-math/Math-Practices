@@ -1,168 +1,490 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Fraction Practice</title>
-  <style>
-    body { 
-      font-family: Arial, sans-serif; 
-      text-align: center; 
-      background: #f4f9ff; 
-      margin: 0; 
-      padding: 0;
-    }
-    h1 { 
-      color: #3b82f6; 
-      font-size: 3rem; 
-      margin-top: 20px;
-    }
-    .card { 
-      background: white; 
-      border-radius: 25px; 
-      padding: 40px; 
-      margin: 30px auto; 
-      width: 90%; 
-      max-width: 900px; 
-      box-shadow: 0 6px 15px rgba(0,0,0,0.15);
-    }
-    #question {
-      font-size: 2.5rem;
-      margin-bottom: 30px;
-      color: #111;
-    }
-    button {
-      margin: 15px; 
-      padding: 20px 40px; 
-      border: none; 
-      border-radius: 15px;
-      background: #3b82f6; 
-      color: white; 
-      font-size: 1.5rem; 
-      cursor: pointer;
-    }
-    button:hover { background: #2563eb; }
-    .feedback { 
-      font-weight: bold; 
-      margin-top: 25px; 
-      font-size: 2rem;
-    }
-    .score { 
-      margin-top: 20px; 
-      font-size: 1.8rem; 
-      color: #111; 
-    }
-    .fraction-input {
-      display: inline-block;
-      text-align: center;
-      margin: 20px;
-    }
-    .fraction-input input {
-      width: 100px; 
-      height: 60px;
-      text-align: center;
-      font-size: 2rem;
-      padding: 10px;
-      border: 2px solid #ccc;
-      border-radius: 10px;
-    }
-    .fraction-bar {
-      display: block;
-      border-top: 3px solid black;
-      width: 100px;
-      margin: 5px auto;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Fraction Practice</title>
+<style>
+  :root{
+    --big: 3rem;     /* question fraction & operator size */
+    --med: 2rem;     /* feedback / headings in game area */
+    --small: 1.35rem;/* buttons, topbar text */
+    --bar: 4px;      /* fraction bar thickness */
+  }
+  body{
+    font-family: Arial, Helvetica, sans-serif;
+    background:#f4f8fb;
+    margin:0;
+    padding:0;
+    color:#111;
+    text-align:center;
+  }
+  h1{
+    font-size: 2.4rem;
+    margin: 24px 0 6px;
+    color:#1f4bd8;
+  }
+  .card{
+    width:96%;
+    max-width:1050px;
+    margin: 14px auto 40px;
+    background:#fff;
+    border-radius: 18px;
+    padding: 28px 18px;
+    box-shadow: 0 10px 24px rgba(0,0,0,.10);
+  }
+
+  /* ===== MENU ===== */
+  .menu{ display:flex; flex-direction:column; align-items:center; gap:16px; }
+  .mode-row{ display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+  .menu button{
+    font-size: var(--small);
+    padding: 12px 20px;
+    border:none; border-radius:12px;
+    background:#10b981; color:#fff; cursor:pointer;
+  }
+  .menu button:hover{ background:#0ea371; }
+  .opts{
+    margin-top:6px; font-size:1rem;
+    display:flex; gap:12px; align-items:center; justify-content:center; flex-wrap:wrap;
+  }
+  .opts input[type="checkbox"]{ transform: scale(1.2); }
+  .opts select{ font-size:1rem; padding:4px 6px; }
+
+  /* ===== GAME AREA ===== */
+  #topbar{
+    display:flex; justify-content:center; gap:18px; align-items:center; flex-wrap:wrap; margin-bottom: 12px;
+  }
+  #modeLabel, #timer, #scoreboard, #streakbar{ font-size: var(--small); }
+  #timer strong{ color:#d81f47; }
+
+  #question{
+    font-size: var(--big);
+    margin: 18px 0 14px;
+    display:flex;
+    justify-content:center; align-items:center;
+    gap: 26px; flex-wrap: wrap;
+  }
+  .operator{
+    font-size: var(--big);
+    display:flex; align-items:center;
+  }
+
+  /* Natural fraction using table (robust) */
+  table.frac{
+    display:inline-table; vertical-align:middle; margin: 0 6px; border-collapse: collapse;
+  }
+  table.frac tr:first-child td{ border-bottom: var(--bar) solid #000; }
+  table.frac td{ padding: 0 14px; font-size: var(--big); line-height: 1.05; }
+
+  /* INPUT FRACTION */
+  #answer{ margin:10px 0 6px; }
+  #answer input{
+    font-size: 1.6rem;
+    width: 130px; height: 58px;
+    text-align:center; border:2px solid #c9cfd6; border-radius: 10px; margin: 4px;
+  }
+  #answer .bar{
+    display:block; width: 150px; border-top: var(--bar) solid #000; margin: 0 auto;
+  }
+
+  /* ACTIONS + FEEDBACK */
+  .actions{ margin-top: 6px; }
+  .btn{
+    font-size: var(--small); padding: 12px 22px;
+    border:none; border-radius:12px; color:#fff; background:#2563eb; cursor:pointer; margin: 6px;
+  }
+  .btn.secondary{ background:#64748b; }
+  .btn:disabled{ opacity:.55; cursor:not-allowed; }
+
+  #feedback{
+    font-size: var(--med);
+    min-height: 2.6rem; /* reserve space to avoid layout jumps */
+    margin-top: 10px;
+  }
+  #work{
+    font-size: 1.1rem; color:#333; margin-top:10px;
+  }
+
+  /* End overlay for challenge mode */
+  #overlay{
+    position: fixed; inset: 0; background: rgba(0,0,0,.5);
+    display:none; align-items:center; justify-content:center; padding: 18px;
+  }
+  .modal{
+    background:#fff; border-radius:16px; padding: 20px 18px;
+    max-width: 560px; width: 92%; box-shadow: 0 10px 26px rgba(0,0,0,.2);
+  }
+  .modal h2{ font-size: 1.6rem; margin-top:0; }
+  .modal p{ font-size: 1.05rem; }
+  .modal .row{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:12px; }
+
+  .hidden{ display:none !important; }
+</style>
 </head>
 <body>
-  <h1>🎯 Fraction Challenge</h1>
-  <div class="card">
-    <h2 id="question">Loading...</h2>
-    <div class="fraction-input">
-      <input type="text" id="num" placeholder="Num" inputmode="numeric" pattern="[0-9]*">
-      <span class="fraction-bar"></span>
-      <input type="text" id="den" placeholder="Den" inputmode="numeric" pattern="[0-9]*">
+  <h1>🎯 Fraction Practice</h1>
+
+  <!-- ===== MENU ===== -->
+  <div class="card" id="menu">
+    <div class="menu">
+      <div class="mode-row">
+        <button onclick="startGame('simplest')">Simplest Form</button>
+        <button onclick="startGame('same')">Add/Subtract (Same Denominator)</button>
+        <button onclick="startGame('diff')">Add/Subtract (Different Denominators)</button>
+      </div>
+      <div class="opts">
+        <label><input type="checkbox" id="challengeToggle"> Challenge Mode</label>
+        <label>Duration:
+          <select id="durationSelect">
+            <option value="60">60s</option>
+            <option value="120" selected>120s</option>
+            <option value="180">180s</option>
+          </select>
+        </label>
+      </div>
     </div>
-    <br>
-    <button onclick="checkAnswer()">Check</button>
-    <button onclick="newQuestion()">Next Question</button>
-    <p class="feedback" id="feedback"></p>
-    <p class="score">🔥 Current Streak: <span id="streak">0</span> | 🏆 Best Streak: <span id="best">0</span></p>
+  </div>
+
+  <!-- ===== GAME ===== -->
+  <div class="card" id="game" style="display:none;">
+    <div id="topbar">
+      <div id="modeLabel"></div>
+      <div id="timer" style="display:none;">⏱️ Time left: <strong>--:--</strong></div>
+      <div id="scoreboard" style="display:none;">Score: <strong>0</strong></div>
+      <div id="streakbar">Streak: <strong>0</strong> | Best: <strong id="bestSpan">0</strong></div>
+    </div>
+
+    <div id="question">Loading…</div>
+
+    <div id="answer">
+      <input type="number" id="num" placeholder="Numerator" inputmode="numeric" />
+      <div class="bar"></div>
+      <input type="number" id="den" placeholder="Denominator" inputmode="numeric" />
+    </div>
+
+    <div class="actions">
+      <button id="submitBtn" class="btn" onclick="checkAnswer()">Submit</button>
+      <button id="nextBtn" class="btn secondary hidden" onclick="handleNext()">Next</button>
+      <button id="backBtn" class="btn secondary" onclick="backToMenu()">Back to Menu</button>
+    </div>
+
+    <div id="feedback"></div>
+    <div id="work"></div>
+  </div>
+
+  <!-- ===== CHALLENGE OVERLAY ===== -->
+  <div id="overlay">
+    <div class="modal">
+      <h2>⏱️ Time’s up!</h2>
+      <p id="summaryText">You scored X.</p>
+      <div class="row">
+        <button class="btn" onclick="restartSameSettings()">Play Again</button>
+        <button class="btn secondary" onclick="backToMenu()">Back to Menu</button>
+      </div>
+    </div>
   </div>
 
 <script>
-let currentAnswer;
-let streak = 0, bestStreak = 0;
+/* -------- Utilities -------- */
+const $ = sel => document.querySelector(sel);
+function randInt(min, max){ return Math.floor(Math.random()*(max-min+1))+min; }
+function gcd(a,b){ a=Math.abs(a); b=Math.abs(b); return b===0?a:gcd(b,a%b); }
+function lcm(a,b){ return a / gcd(a,b) * b; }
+function simplify(n,d){ const g=gcd(n,d); return [n/g, d/g]; }
+function pad(n){ return n<10? "0"+n : ""+n; }
 
-function randInt(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+function fracHTML(n,d){
+  return `<table class="frac">
+    <tr><td>${n}</td></tr>
+    <tr><td>${d}</td></tr>
+  </table>`;
 }
 
-function gcd(a, b) {
-  return b ? gcd(b, a % b) : a;
-}
+/* -------- State -------- */
+let mode = "";                 // 'simplest' | 'same' | 'diff'
+let challenge = false;
+let durationSec = 120;
+let timerId = null;
+let timeLeft = 0;
+let score = 0;
 
-function simplify(num, den) {
-  let g = gcd(num, den);
-  return [num/g, den/g];
-}
+let streak = 0;
+let best = 0;
 
-function newQuestion() {
-  document.getElementById("feedback").innerHTML = "";
-  document.getElementById("num").value = "";
-  document.getElementById("den").value = "";
-  let type = randInt(1, 3); // 1=equivalent, 2=same denom, 3=different denom
-  let q = "";
-  
-  if (type === 1) {
-    let num = randInt(1,9), den = randInt(2,9);
-    let factor = randInt(2,5);
-    q = `Find an equivalent fraction to ${num}/${den}`;
-    currentAnswer = [num*factor, den*factor];
-  } 
-  else if (type === 2) {
-    let den = randInt(2,9);
-    let n1 = randInt(1, den-1), n2 = randInt(1, den-1);
-    let op = Math.random() > 0.5 ? "+" : "-";
-    if (op === "-" && n1 < n2) [n1, n2] = [n2, n1];
-    q = `${n1}/${den} ${op} ${n2}/${den}`;
-    let res = op==="+" ? n1+n2 : n1-n2;
-    currentAnswer = simplify(res, den);
-  } 
-  else {
-    let den1 = randInt(2,9), den2 = randInt(2,9);
-    let n1 = randInt(1, den1-1), n2 = randInt(1, den2-1);
-    let op = Math.random() > 0.5 ? "+" : "-";
-    let commonDen = den1*den2;
-    let res = op==="+" ? (n1*den2 + n2*den1) : Math.abs(n1*den2 - n2*den1);
-    q = `${n1}/${den1} ${op} ${n2}/${den2}`;
-    currentAnswer = simplify(res, commonDen);
+let current = {
+  // simplest: eqN, eqD, baseN, baseD
+  // same/diff: n1, d1, n2, d2, op, L, m1, m2, N1, N2, rawN, rawD, ansN, ansD
+};
+
+/* -------- Menu / Nav -------- */
+function startGame(selectedMode){
+  mode = selectedMode;
+  challenge = $("#challengeToggle").checked;
+  durationSec = parseInt($("#durationSelect").value, 10);
+
+  // reset session stats
+  streak = 0;
+  $("#streakbar").innerHTML = `Streak: <strong>${streak}</strong> | Best: <strong id="bestSpan">${best}</strong>`;
+  $("#menu").style.display = "none";
+  $("#game").style.display = "block";
+
+  // topbar text
+  $("#modeLabel").textContent =
+    mode==="simplest" ? "Mode: Simplest Form" :
+    mode==="same"     ? "Mode: Add/Subtract (Same Denominator)" :
+                        "Mode: Add/Subtract (Different Denominators)";
+
+  // challenge UI
+  if (challenge){
+    $("#timer").style.display = "block";
+    $("#scoreboard").style.display = "block";
+    score = 0;
+    timeLeft = durationSec;
+    updateTimerUI();
+    if (timerId) clearInterval(timerId);
+    timerId = setInterval(tick, 1000);
+  }else{
+    $("#timer").style.display = "none";
+    $("#scoreboard").style.display = "none";
+    if (timerId){ clearInterval(timerId); timerId=null; }
   }
-  
-  document.getElementById("question").innerHTML = q;
+
+  newQuestion();
 }
 
-function checkAnswer() {
-  let userNum = parseInt(document.getElementById("num").value);
-  let userDen = parseInt(document.getElementById("den").value);
-  if (!userNum || !userDen) {
-    document.getElementById("feedback").innerHTML = "⚠️ Enter both numerator and denominator!";
+function backToMenu(){
+  if (timerId){ clearInterval(timerId); timerId=null; }
+  $("#overlay").style.display = "none";
+  $("#game").style.display = "none";
+  $("#menu").style.display = "block";
+  $("#feedback").innerHTML = "";
+  $("#work").innerHTML = "";
+  enableInputs(true);
+  $("#nextBtn").classList.add("hidden");
+}
+
+function restartSameSettings(){
+  $("#overlay").style.display = "none";
+  startGame(mode);
+}
+
+/* -------- Challenge Timer -------- */
+function tick(){
+  timeLeft--;
+  updateTimerUI();
+  if (timeLeft<=0){
+    clearInterval(timerId); timerId=null;
+    endChallenge();
+  }
+}
+function updateTimerUI(){
+  $("#timer strong").textContent = `${pad(Math.floor(timeLeft/60))}:${pad(timeLeft%60)}`;
+  $("#scoreboard strong").textContent = score;
+}
+function endChallenge(){
+  enableInputs(false);
+  $("#nextBtn").classList.add("hidden");
+  $("#summaryText").innerHTML = `Mode: <strong>${
+    mode==="simplest" ? "Simplest Form" :
+    mode==="same"     ? "Add/Subtract (Same Denominator)" :
+                        "Add/Subtract (Different Denominators)"
+  }</strong><br>Correct answers: <strong>${score}</strong><br>Best streak this session: <strong>${best}</strong>`;
+  $("#overlay").style.display = "flex";
+}
+
+/* -------- Question Generation (Constraints enforced) -------- */
+function newQuestion(){
+  $("#feedback").innerHTML = "";
+  $("#work").innerHTML = "";
+  $("#num").value = "";
+  $("#den").value = "";
+  enableInputs(true);
+  $("#nextBtn").classList.add("hidden");
+
+  if (mode==="simplest"){
+    // Base simplest fraction: denominator 2..10, gcd=1
+    let baseN, baseD;
+    do{
+      baseD = randInt(2,10);
+      baseN = randInt(1, baseD-1);
+    }while(gcd(baseN, baseD)!==1);
+
+    // Random factor 2..10 but cap so values ≤ 100
+    let maxFactor = Math.min(10, Math.floor(100/Math.max(baseN, baseD)));
+    let factor = randInt(2, Math.max(2, maxFactor)); // ensure ≥2
+    const eqN = baseN * factor;
+    const eqD = baseD * factor;
+
+    current = { eqN, eqD, baseN, baseD };
+    $("#question").innerHTML = `${fracHTML(eqN,eqD)}`;
     return;
   }
-  // simplify user input before comparing
-  let simplified = simplify(userNum, userDen);
-  if (simplified[0] === currentAnswer[0] && simplified[1] === currentAnswer[1]) {
-    document.getElementById("feedback").innerHTML = "✅ Correct!";
-    streak++;
-    if (streak > bestStreak) bestStreak = streak;
-  } else {
-    document.getElementById("feedback").innerHTML = `❌ Wrong! The answer was ${currentAnswer[0]}/${currentAnswer[1]}`;
-    streak = 0;
+
+  // add/subtract
+  let tries = 0;
+  while (tries++ < 250){
+    let d1 = randInt(2,10);
+    let d2 = (mode==="same") ? d1 : randInt(2,10);
+    if (mode==="diff" && d2===d1) continue; // ensure different denominators
+
+    let n1 = randInt(1, d1-1);
+    let n2 = randInt(1, d2-1);
+    let op = Math.random()<0.5 ? "+" : "-";
+
+    // LCM for clean teaching steps
+    let L = lcm(d1, d2);
+    let m1 = L / d1, m2 = L / d2;
+    let N1 = n1 * m1, N2 = n2 * m2;
+
+    // apply constraints:
+    let rawN, rawD=L;
+    if (op==="-"){
+      // ensure non-negative result and not zero
+      if (N1 < N2){ [n1,d1,N1, n2,d2,N2] = [n2,d2,N2, n1,d1,N1]; }
+      if (N1===N2) continue; // avoid zero
+      rawN = N1 - N2;
+    }else{ // "+"
+      if (N1 + N2 >= L) continue; // sum < 1
+      rawN = N1 + N2;
+    }
+
+    // simplify and ensure not integer
+    let [sN, sD] = simplify(rawN, rawD);
+    if (sN===0 || sN % sD === 0) continue; // avoid integer/zero results
+
+    current = { n1, d1, n2, d2, op, L, m1, m2, N1, N2, rawN, rawD, ansN:sN, ansD:sD };
+    $("#question").innerHTML = `${fracHTML(n1,d1)} <span class="operator">${op}</span> ${fracHTML(n2,d2)}`;
+    return;
   }
-  document.getElementById("streak").textContent = streak;
-  document.getElementById("best").textContent = bestStreak;
+
+  // Very unlikely fallback
+  $("#question").textContent = "Could not generate a question. Try again.";
 }
 
-// ✅ Ensure first question appears after page loads
-window.onload = newQuestion;
+/* -------- Answer Checking + Step Explanations -------- */
+function enableInputs(on){
+  $("#num").disabled = !on;
+  $("#den").disabled = !on;
+  $("#submitBtn").disabled = !on;
+}
+
+function checkAnswer(){
+  if (challenge && !timerId) return; // if time's up, ignore
+
+  const num = parseInt($("#num").value,10);
+  const den = parseInt($("#den").value,10);
+  if (!num || !den){
+    $("#feedback").innerHTML = "⚠️ Please enter both numerator and denominator.";
+    return;
+  }
+
+  let [sn, sd] = simplify(num, den);
+  let correct = false;
+  let simplestEntered = (sn===num && sd===den); // user already reduced
+
+  if (mode==="simplest"){
+    correct = (sn===current.baseN && sd===current.baseD && simplestEntered);
+  }else{
+    // must exactly match simplest form
+    correct = (sn===current.ansN && sd===current.ansD && simplestEntered);
+  }
+
+  // prevent further tampering on this question
+  enableInputs(false);
+
+  if (correct){
+    $("#feedback").innerHTML = "✅ Correct!";
+    $("#work").innerHTML = "";
+    streak++;
+    if (streak>best){ best=streak; $("#bestSpan").textContent = best; }
+    if (challenge){ score++; updateTimerUI(); }
+  }else{
+    // wrong: reset streak, show full steps
+    const isValueCorrectButNotSimplest =
+      (mode==="simplest"  && sn===current.baseN && sd===current.baseD && !simplestEntered) ||
+      (mode!=="simplest" && sn===current.ansN  && sd===current.ansD  && !simplestEntered);
+
+    if (isValueCorrectButNotSimplest){
+      $("#feedback").innerHTML = "❌ Correct value but not in simplest form.";
+      $("#work").innerHTML = buildStepsHTML(true, num, den, sn, sd);
+    }else{
+      $("#feedback").innerHTML = "❌ Incorrect.";
+      $("#work").innerHTML = buildStepsHTML(false, num, den, sn, sd);
+    }
+    streak = 0;
+  }
+
+  // update streakbar text
+  $("#streakbar").innerHTML = `Streak: <strong>${streak}</strong> | Best: <strong id="bestSpan">${best}</strong>`;
+
+  // show Next button for manual advance
+  $("#nextBtn").classList.remove("hidden");
+}
+
+function handleNext(){
+  if (challenge && !timerId){ // time's up
+    endChallenge();
+    return;
+  }
+  newQuestion();
+}
+
+/* Build step-by-step working.
+   If unsimplified=true, also show a reminder how the student's fraction simplifies. */
+function buildStepsHTML(unsimplified, userN, userD, sUserN, sUserD){
+  if (mode==="simplest"){
+    const {eqN,eqD,baseN,baseD} = current;
+    const G = gcd(eqN, eqD);
+    const lines = [];
+    if (unsimplified){
+      const gStu = gcd(userN, userD);
+      lines.push(`Reminder: simplify your answer → ${userN}/${userD} ÷ ${gStu}/${gStu} = <strong>${sUserN}/${sUserD}</strong>`);
+      lines.push(`<br>`);
+    }
+    lines.push(`Step 1: Find GCD(${eqN}, ${eqD}) = <strong>${G}</strong>.`);
+    lines.push(`Step 2: Divide both by ${G}: ${fracHTML(eqN,eqD)} → ${fracHTML(eqN/G, eqD/G)}.`);
+    lines.push(`Answer: ${fracHTML(baseN, baseD)}`);
+    return `<div id="steps">${lines.join("<br>")}</div>`;
+  }
+
+  const {n1,d1,n2,d2,op,L,m1,m2,N1,N2,rawN,rawD,ansN,ansD} = current;
+  const lines = [];
+
+  if (unsimplified){
+    const gStu = gcd(userN, userD);
+    lines.push(`Reminder: simplify your answer → ${userN}/${userD} ÷ ${gStu}/${gStu} = <strong>${sUserN}/${sUserD}</strong>`);
+    lines.push(`<br>`);
+  }
+
+  if (d1===d2){
+    // Same denominator method
+    lines.push(`Step 1: Denominators are the same (${d1}).`);
+    if (op==="+"){
+      lines.push(`Step 2: Add numerators: ${n1} + ${n2} = <strong>${n1+n2}</strong> → ${fracHTML(rawN, rawD)}.`);
+    }else{
+      lines.push(`Step 2: Subtract numerators: ${Math.max(n1,n2)} − ${Math.min(n1,n2)} = <strong>${Math.abs(n1-n2)}</strong> → ${fracHTML(rawN, rawD)}.`);
+    }
+    const G = gcd(rawN, rawD);
+    lines.push(`Step 3: Simplify by GCD(${rawN}, ${rawD}) = <strong>${G}</strong> → ${fracHTML(rawN/G, rawD/G)}.`);
+    lines.push(`Answer: ${fracHTML(ansN, ansD)}`);
+  }else{
+    // Different denominators method (LCM)
+    lines.push(`Step 1: Find LCM of denominators: LCM(${d1}, ${d2}) = <strong>${L}</strong>.`);
+    lines.push(`Step 2: Convert to equivalent fractions with denominator ${L}:`);
+    lines.push(`&nbsp;&nbsp;${fracHTML(n1,d1)} × ${m1}/${m1} → ${fracHTML(N1,L)}, &nbsp; ${fracHTML(n2,d2)} × ${m2}/${m2} → ${fracHTML(N2,L)}.`);
+    if (op==="+"){
+      lines.push(`Step 3: Add numerators: ${N1} + ${N2} = <strong>${N1+N2}</strong> → ${fracHTML(rawN, L)}.`);
+    }else{
+      lines.push(`Step 3: Subtract numerators: ${Math.max(N1,N2)} − ${Math.min(N1,N2)} = <strong>${Math.abs(N1-N2)}</strong> → ${fracHTML(rawN, L)}.`);
+    }
+    const G = gcd(rawN, L);
+    lines.push(`Step 4: Simplify by GCD(${rawN}, ${L}) = <strong>${G}</strong> → ${fracHTML(rawN/G, L/G)}.`);
+    lines.push(`Answer: ${fracHTML(ansN, ansD)}`);
+  }
+
+  return `<div id="steps">${lines.join("<br>")}</div>`;
+}
 </script>
 </body>
 </html>
