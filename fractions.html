@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Fraction Practice</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      text-align: center; 
+      background: #f4f9ff; 
+      margin: 0; 
+      padding: 0;
+    }
+    h1 { 
+      color: #3b82f6; 
+      font-size: 3rem; 
+      margin-top: 20px;
+    }
+    .card { 
+      background: white; 
+      border-radius: 25px; 
+      padding: 40px; 
+      margin: 30px auto; 
+      width: 90%; 
+      max-width: 900px; 
+      box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+    }
+    #question {
+      font-size: 2.5rem;
+      margin-bottom: 30px;
+      color: #111;
+    }
+    button {
+      margin: 15px; 
+      padding: 20px 40px; 
+      border: none; 
+      border-radius: 15px;
+      background: #3b82f6; 
+      color: white; 
+      font-size: 1.5rem; 
+      cursor: pointer;
+    }
+    button:hover { background: #2563eb; }
+    .feedback { 
+      font-weight: bold; 
+      margin-top: 25px; 
+      font-size: 2rem;
+    }
+    .score { 
+      margin-top: 20px; 
+      font-size: 1.8rem; 
+      color: #111; 
+    }
+    .fraction-input {
+      display: inline-block;
+      text-align: center;
+      margin: 20px;
+    }
+    .fraction-input input {
+      width: 100px; 
+      height: 60px;
+      text-align: center;
+      font-size: 2rem;
+      padding: 10px;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+    }
+    .fraction-bar {
+      display: block;
+      border-top: 3px solid black;
+      width: 100px;
+      margin: 5px auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎯 Fraction Challenge</h1>
+  <div class="card">
+    <h2 id="question">Loading...</h2>
+    <div class="fraction-input">
+      <input type="text" id="num" placeholder="Num" inputmode="numeric" pattern="[0-9]*">
+      <span class="fraction-bar"></span>
+      <input type="text" id="den" placeholder="Den" inputmode="numeric" pattern="[0-9]*">
+    </div>
+    <br>
+    <button onclick="checkAnswer()">Check</button>
+    <button onclick="newQuestion()">Next Question</button>
+    <p class="feedback" id="feedback"></p>
+    <p class="score">🔥 Current Streak: <span id="streak">0</span> | 🏆 Best Streak: <span id="best">0</span></p>
+  </div>
+
+<script>
+let currentAnswer;
+let streak = 0, bestStreak = 0;
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function gcd(a, b) {
+  return b ? gcd(b, a % b) : a;
+}
+
+function simplify(num, den) {
+  let g = gcd(num, den);
+  return [num/g, den/g];
+}
+
+function newQuestion() {
+  document.getElementById("feedback").innerHTML = "";
+  document.getElementById("num").value = "";
+  document.getElementById("den").value = "";
+  let type = randInt(1, 3); // 1=equivalent, 2=same denom, 3=different denom
+  let q = "";
+  
+  if (type === 1) {
+    let num = randInt(1,9), den = randInt(2,9);
+    let factor = randInt(2,5);
+    q = `Find an equivalent fraction to ${num}/${den}`;
+    currentAnswer = [num*factor, den*factor];
+  } 
+  else if (type === 2) {
+    let den = randInt(2,9);
+    let n1 = randInt(1, den-1), n2 = randInt(1, den-1);
+    let op = Math.random() > 0.5 ? "+" : "-";
+    if (op === "-" && n1 < n2) [n1, n2] = [n2, n1];
+    q = `${n1}/${den} ${op} ${n2}/${den}`;
+    let res = op==="+" ? n1+n2 : n1-n2;
+    currentAnswer = simplify(res, den);
+  } 
+  else {
+    let den1 = randInt(2,9), den2 = randInt(2,9);
+    let n1 = randInt(1, den1-1), n2 = randInt(1, den2-1);
+    let op = Math.random() > 0.5 ? "+" : "-";
+    let commonDen = den1*den2;
+    let res = op==="+" ? (n1*den2 + n2*den1) : Math.abs(n1*den2 - n2*den1);
+    q = `${n1}/${den1} ${op} ${n2}/${den2}`;
+    currentAnswer = simplify(res, commonDen);
+  }
+  
+  document.getElementById("question").innerHTML = q;
+}
+
+function checkAnswer() {
+  let userNum = parseInt(document.getElementById("num").value);
+  let userDen = parseInt(document.getElementById("den").value);
+  if (!userNum || !userDen) {
+    document.getElementById("feedback").innerHTML = "⚠️ Enter both numerator and denominator!";
+    return;
+  }
+  // simplify user input before comparing
+  let simplified = simplify(userNum, userDen);
+  if (simplified[0] === currentAnswer[0] && simplified[1] === currentAnswer[1]) {
+    document.getElementById("feedback").innerHTML = "✅ Correct!";
+    streak++;
+    if (streak > bestStreak) bestStreak = streak;
+  } else {
+    document.getElementById("feedback").innerHTML = `❌ Wrong! The answer was ${currentAnswer[0]}/${currentAnswer[1]}`;
+    streak = 0;
+  }
+  document.getElementById("streak").textContent = streak;
+  document.getElementById("best").textContent = bestStreak;
+}
+
+// ✅ Ensure first question appears after page loads
+window.onload = newQuestion;
+</script>
+</body>
+</html>
