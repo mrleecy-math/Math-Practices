@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Number Bonds Game</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background: #f0f9ff;
+    margin: 0;
+    padding: 0;
+  }
+  .game-container {
+    margin: 20px auto;
+    max-width: 400px;
+  }
+  .circle {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid #0077b6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: bold;
+    margin: auto;
+    animation: pop 0.6s ease;
+  }
+  @keyframes pop {
+    0% { transform: scale(0.5); opacity: 0; }
+    70% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(1); }
+  }
+  .line {
+    width: 120px;
+    height: 0;
+    border-top: 3px solid #0077b6;
+    position: relative;
+    margin: auto;
+  }
+  .line-left {
+    transform: rotate(40deg);
+    left: -50px;
+  }
+  .line-right {
+    transform: rotate(-40deg);
+    right: -50px;
+  }
+  table {
+    margin: 20px auto;
+    border-collapse: collapse;
+  }
+  td {
+    text-align: center;
+    vertical-align: middle;
+    width: 80px;
+    height: 60px;
+  }
+  input {
+    width: 60px;
+    height: 40px;
+    font-size: 20px;
+    text-align: center;
+    border: 2px solid #0077b6;
+    border-radius: 8px;
+  }
+  button {
+    padding: 10px 20px;
+    font-size: 18px;
+    margin: 10px;
+    border-radius: 10px;
+    border: none;
+    background: #00b4d8;
+    color: white;
+    cursor: pointer;
+  }
+  button:disabled {
+    background: gray;
+    cursor: not-allowed;
+  }
+  #feedback {
+    font-size: 18px;
+    margin-top: 10px;
+  }
+  #streak {
+    font-size: 20px;
+    margin-top: 15px;
+    font-weight: bold;
+  }
+  #solutions {
+    margin-top: 10px;
+    white-space: pre-line;
+    font-size: 16px;
+    color: #333;
+  }
+  /* Car animation section */
+  .road-container {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    height: 80px;
+    margin: 30px auto 0;
+    background: #e0e0e0;
+    border-radius: 40px;
+    overflow: hidden;
+  }
+  .road {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: #333;
+    transform: translateY(-50%);
+  }
+  .car {
+    position: absolute;
+    top: 15px;
+    left: 0;
+    font-size: 40px;
+    transition: left 0.7s ease;
+  }
+  .celebrate {
+    animation: bounce 0.8s infinite alternate;
+  }
+  @keyframes bounce {
+    from { transform: translateY(0); }
+    to { transform: translateY(-10px); }
+  }
+</style>
+</head>
+<body>
+
+<div class="game-container">
+  <h1>Number Bonds Game</h1>
+  <p>Select Level:</p>
+  <button onclick="startGame(10)">Up to 10</button>
+  <button onclick="startGame(20)">Up to 20</button>
+  <div id="game" style="display:none;">
+    <table>
+      <tr>
+        <td colspan="3"><div id="sumCircle" class="circle"></div></td>
+      </tr>
+      <tr>
+        <td><div class="line line-left"></div></td>
+        <td></td>
+        <td><div class="line line-right"></div></td>
+      </tr>
+      <tr>
+        <td><div id="leftCircle" class="circle"><input id="leftInput" type="number"></div></td>
+        <td></td>
+        <td><div id="rightCircle" class="circle"><input id="rightInput" type="number"></div></td>
+      </tr>
+    </table>
+    <div>
+      <button id="checkBtn" onclick="checkAnswer()">Check</button>
+      <button id="nextBtn" onclick="nextQuestion()" disabled>Next</button>
+      <button onclick="endGame()">End Game</button>
+    </div>
+    <div id="feedback"></div>
+    <div id="solutions"></div>
+    <div id="streak">Streak: 0</div>
+
+    <!-- Road + Car -->
+    <div class="road-container">
+      <div class="road"></div>
+      <div id="car" class="car">🚗</div>
+    </div>
+  </div>
+</div>
+
+<!-- Sound effects -->
+<audio id="correctSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+<audio id="wrongSound" src="https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg"></audio>
+
+<script>
+let maxSum = 10;
+let currentSum, attemptDone = false;
+let streak = 0;
+let carProgress = 0;
+const steps = 5; // how many steps car needs to finish road
+
+// Start game
+function startGame(limit) {
+  maxSum = limit;
+  document.querySelectorAll("button[onclick^='startGame']").forEach(btn => btn.style.display="none");
+  document.getElementById("game").style.display="block";
+  nextQuestion();
+}
+
+// Generate question
+function nextQuestion() {
+  document.getElementById("feedback").textContent = "";
+  document.getElementById("solutions").textContent = "";
+  attemptDone = false;
+  document.getElementById("checkBtn").disabled = false;
+  document.getElementById("nextBtn").disabled = true;
+
+  currentSum = Math.floor(Math.random() * (maxSum-1)) + 2; // between 2 and max
+  let split = Math.floor(Math.random() * (currentSum + 1));
+  let other = currentSum - split;
+
+  let sumCircle = document.getElementById("sumCircle");
+  sumCircle.textContent = currentSum;
+  sumCircle.style.animation = "none";
+  sumCircle.offsetHeight; // reset animation
+  sumCircle.style.animation = "pop 0.6s ease";
+
+  let leftInput = document.getElementById("leftInput");
+  let rightInput = document.getElementById("rightInput");
+
+  leftInput.value = "";
+  rightInput.value = "";
+
+  // Randomly decide how many blanks
+  let blanks = Math.random() < 0.5 ? 1 : 2;
+  if (blanks === 1) {
+    if (Math.random() < 0.5) {
+      leftInput.value = split;
+    } else {
+      rightInput.value = other;
+    }
+  }
+}
+
+// Check answer
+function checkAnswer() {
+  if (attemptDone) return;
+  attemptDone = true;
+  document.getElementById("checkBtn").disabled = true;
+  document.getElementById("nextBtn").disabled = false;
+
+  let leftVal = parseInt(document.getElementById("leftInput").value);
+  let rightVal = parseInt(document.getElementById("rightInput").value);
+
+  if (isNaN(leftVal) || isNaN(rightVal) || leftVal < 0 || rightVal < 0) {
+    document.getElementById("feedback").textContent = "❌ Please enter valid whole numbers.";
+    streak = 0;
+    updateStreak();
+    document.getElementById("wrongSound").play();
+    return;
+  }
+
+  if (leftVal + rightVal === currentSum) {
+    document.getElementById("feedback").textContent = "✅ Correct!";
+    streak++;
+    updateStreak();
+    document.getElementById("correctSound").play();
+    moveCar();
+  } else {
+    document.getElementById("feedback").textContent = "❌ Wrong. Try again next time.";
+    showSolutions();
+    streak = 0;
+    updateStreak();
+    document.getElementById("wrongSound").play();
+  }
+}
+
+// Show all solutions
+function showSolutions() {
+  let sols = [];
+  for (let i=0; i<=currentSum; i++) {
+    sols.push(`${currentSum} = ${i} + ${currentSum-i}`);
+  }
+  document.getElementById("solutions").textContent = sols.join("\n");
+}
+
+// Update streak display
+function updateStreak() {
+  document.getElementById("streak").textContent = "Streak: " + streak;
+}
+
+// Move car
+function moveCar() {
+  let car = document.getElementById("car");
+  let road = document.querySelector(".road-container");
+  let maxDistance = road.offsetWidth - 60; // leave space
+  carProgress++;
+  let newLeft = (carProgress / steps) * maxDistance;
+  car.style.left = newLeft + "px";
+
+  if (carProgress >= steps) {
+    car.classList.add("celebrate");
+  }
+}
+
+// End game
+function endGame() {
+  alert("Thanks for playing! Your best streak was " + streak);
+  location.reload();
+}
+</script>
+</body>
+</html>
