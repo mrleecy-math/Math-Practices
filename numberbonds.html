@@ -3,296 +3,260 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Number Bonds Game</title>
+<title>Number Bonds Racing Game</title>
 <style>
   body {
     font-family: Arial, sans-serif;
     text-align: center;
-    background: #f0f9ff;
+    background: #f0f8ff;
     margin: 0;
     padding: 0;
   }
-  .game-container {
-    margin: 20px auto;
-    max-width: 400px;
-  }
-  .circle {
-    width: 70px;
-    height: 70px;
-    border-radius: 50%;
-    background: #fff;
-    border: 3px solid #0077b6;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    font-weight: bold;
-    margin: auto;
-    animation: pop 0.6s ease;
-  }
-  @keyframes pop {
-    0% { transform: scale(0.5); opacity: 0; }
-    70% { transform: scale(1.2); opacity: 1; }
-    100% { transform: scale(1); }
-  }
-  .line {
-    width: 120px;
-    height: 0;
-    border-top: 3px solid #0077b6;
-    position: relative;
-    margin: auto;
-  }
-  .line-left {
-    transform: rotate(40deg);
-    left: -50px;
-  }
-  .line-right {
-    transform: rotate(-40deg);
-    right: -50px;
-  }
-  table {
-    margin: 20px auto;
-    border-collapse: collapse;
-  }
-  td {
-    text-align: center;
-    vertical-align: middle;
-    width: 80px;
-    height: 60px;
-  }
-  input {
-    width: 60px;
-    height: 40px;
-    font-size: 20px;
-    text-align: center;
-    border: 2px solid #0077b6;
-    border-radius: 8px;
-  }
+  h1 { font-size: 1.5em; margin: 10px 0; }
+  .menu { margin-top: 40px; }
   button {
+    font-size: 1.2em;
     padding: 10px 20px;
-    font-size: 18px;
     margin: 10px;
     border-radius: 10px;
     border: none;
-    background: #00b4d8;
+    background: #4CAF50;
     color: white;
     cursor: pointer;
   }
-  button:disabled {
-    background: gray;
-    cursor: not-allowed;
+  button:hover { background: #45a049; }
+  #gameArea { display: none; margin-top: 20px; }
+  .bond {
+    font-size: 1.5em;
+    margin: 20px 0;
   }
-  #feedback {
-    font-size: 18px;
-    margin-top: 10px;
+  input {
+    font-size: 1.2em;
+    width: 60px;
+    text-align: center;
+    margin: 5px;
   }
-  #streak {
-    font-size: 20px;
-    margin-top: 15px;
-    font-weight: bold;
-  }
-  #solutions {
-    margin-top: 10px;
-    white-space: pre-line;
-    font-size: 16px;
-    color: #333;
-  }
-  /* Car animation section */
-  .road-container {
+  #message { margin: 15px; font-size: 1.2em; font-weight: bold; }
+  #streak { margin: 10px; font-size: 1.2em; }
+  #track {
     position: relative;
-    width: 100%;
-    max-width: 400px;
     height: 80px;
-    margin: 30px auto 0;
-    background: #e0e0e0;
-    border-radius: 40px;
-    overflow: hidden;
+    width: 90%;
+    max-width: 700px;
+    margin: 20px auto;
+    border: 3px solid #333;
+    border-radius: 15px;
+    background: linear-gradient(to right, #ddd, #fff);
   }
-  .road {
+  #car {
     position: absolute;
-    top: 50%;
+    top: 20px;
     left: 0;
-    width: 100%;
-    height: 4px;
-    background: #333;
-    transform: translateY(-50%);
+    width: 60px;
+    height: 40px;
+    background: url('https://i.imgur.com/H6K7QZT.png') no-repeat center;
+    background-size: contain;
+    transition: left 0.5s ease;
   }
-  .car {
+  #finish {
     position: absolute;
-    top: 15px;
-    left: 0;
-    font-size: 40px;
-    transition: left 0.7s ease;
+    top: 5px;
+    right: -15px;
+    width: 50px;
+    height: 70px;
+    background: url('https://i.imgur.com/FdYH0T4.png') no-repeat center;
+    background-size: contain;
   }
-  .celebrate {
-    animation: bounce 0.8s infinite alternate;
-  }
-  @keyframes bounce {
-    from { transform: translateY(0); }
-    to { transform: translateY(-10px); }
+  #countdown { font-size: 1.3em; margin: 10px; }
+  #restartBtn {
+    display: none;
+    margin-top: 20px;
+    background: #2196F3;
   }
 </style>
 </head>
 <body>
 
-<div class="game-container">
-  <h1>Number Bonds Game</h1>
-  <p>Select Level:</p>
-  <button onclick="startGame(10)">Up to 10</button>
-  <button onclick="startGame(20)">Up to 20</button>
-  <div id="game" style="display:none;">
-    <table>
-      <tr>
-        <td colspan="3"><div id="sumCircle" class="circle"></div></td>
-      </tr>
-      <tr>
-        <td><div class="line line-left"></div></td>
-        <td></td>
-        <td><div class="line line-right"></div></td>
-      </tr>
-      <tr>
-        <td><div id="leftCircle" class="circle"><input id="leftInput" type="number"></div></td>
-        <td></td>
-        <td><div id="rightCircle" class="circle"><input id="rightInput" type="number"></div></td>
-      </tr>
-    </table>
-    <div>
-      <button id="checkBtn" onclick="checkAnswer()">Check</button>
-      <button id="nextBtn" onclick="nextQuestion()" disabled>Next</button>
-      <button onclick="endGame()">End Game</button>
-    </div>
-    <div id="feedback"></div>
-    <div id="solutions"></div>
-    <div id="streak">Streak: 0</div>
+<h1>Number Bonds Racing Game 🚗</h1>
 
-    <!-- Road + Car -->
-    <div class="road-container">
-      <div class="road"></div>
-      <div id="car" class="car">🚗</div>
-    </div>
-  </div>
+<div class="menu" id="menu">
+  <p>Select Max Sum:</p>
+  <button onclick="setSum(10)">Up to 10</button>
+  <button onclick="setSum(20)">Up to 20</button>
 </div>
 
-<!-- Sound effects -->
-<audio id="correctSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
-<audio id="wrongSound" src="https://actions.google.com/sounds/v1/cartoon/cartoon_boing.ogg"></audio>
+<div class="menu" id="modeMenu" style="display:none;">
+  <p>Select Mode:</p>
+  <button onclick="startGame('normal')">Normal</button>
+  <button onclick="startGame('challenge')">Challenge</button>
+</div>
+
+<div id="gameArea">
+  <div id="countdown">20 steps to finish</div>
+  <div class="bond" id="bondDisplay"></div>
+  <input type="number" id="inputA" placeholder="?" />
+  <input type="number" id="inputB" placeholder="?" />
+  <input type="number" id="inputC" placeholder="?" />
+  <br>
+  <button onclick="checkAnswer()">Check</button>
+  <button id="nextBtn" onclick="nextQuestion()" disabled>Next</button>
+  <div id="message"></div>
+  <div id="streak">Streak: 0</div>
+
+  <div id="track">
+    <div id="car"></div>
+    <div id="finish"></div>
+  </div>
+  <button id="restartBtn" onclick="restartGame()">Restart Game</button>
+</div>
 
 <script>
 let maxSum = 10;
-let currentSum, attemptDone = false;
+let mode = "normal";
+let currentA, currentB, currentC;
+let blanks = [];
+let attempted = false;
 let streak = 0;
-let carProgress = 0;
-const steps = 5; // how many steps car needs to finish road
+let carPosition = 0;
+let totalSteps = 20;
+let stepsRemaining = 20;
 
-// Start game
-function startGame(limit) {
-  maxSum = limit;
-  document.querySelectorAll("button[onclick^='startGame']").forEach(btn => btn.style.display="none");
-  document.getElementById("game").style.display="block";
+// sounds
+const correctSound = new Audio("https://www.soundjay.com/buttons/sounds/button-3.mp3");
+const wrongSound = new Audio("https://www.soundjay.com/buttons/sounds/button-10.mp3");
+const cheerSound = new Audio("https://www.soundjay.com/human/sounds/applause-8.mp3");
+
+function setSum(sum) {
+  maxSum = sum;
+  document.getElementById("menu").style.display = "none";
+  document.getElementById("modeMenu").style.display = "block";
+}
+
+function startGame(selectedMode) {
+  mode = selectedMode;
+  document.getElementById("modeMenu").style.display = "none";
+  document.getElementById("gameArea").style.display = "block";
+  streak = 0;
+  carPosition = 0;
+  stepsRemaining = totalSteps;
+  updateCountdown();
+  document.getElementById("car").style.left = "0px";
   nextQuestion();
 }
 
-// Generate question
 function nextQuestion() {
-  document.getElementById("feedback").textContent = "";
-  document.getElementById("solutions").textContent = "";
-  attemptDone = false;
-  document.getElementById("checkBtn").disabled = false;
+  document.getElementById("message").textContent = "";
   document.getElementById("nextBtn").disabled = true;
-
-  currentSum = Math.floor(Math.random() * (maxSum-1)) + 2; // between 2 and max
-  let split = Math.floor(Math.random() * (currentSum + 1));
-  let other = currentSum - split;
-
-  let sumCircle = document.getElementById("sumCircle");
-  sumCircle.textContent = currentSum;
-  sumCircle.style.animation = "none";
-  sumCircle.offsetHeight; // reset animation
-  sumCircle.style.animation = "pop 0.6s ease";
-
-  let leftInput = document.getElementById("leftInput");
-  let rightInput = document.getElementById("rightInput");
-
-  leftInput.value = "";
-  rightInput.value = "";
-
-  // Randomly decide how many blanks
-  let blanks = Math.random() < 0.5 ? 1 : 2;
-  if (blanks === 1) {
-    if (Math.random() < 0.5) {
-      leftInput.value = split;
-    } else {
-      rightInput.value = other;
-    }
-  }
+  attempted = false;
+  generateQuestion();
 }
 
-// Check answer
+function generateQuestion() {
+  let sum;
+  if (maxSum === 10) {
+    sum = Math.floor(Math.random() * 10) + 1;
+  } else {
+    sum = Math.floor(Math.random() * 10) + 11; // 11–20
+  }
+  let part = Math.floor(Math.random() * (sum + 1));
+  currentA = sum;
+  currentB = part;
+  currentC = sum - part;
+
+  blanks = [];
+  document.getElementById("inputA").value = "";
+  document.getElementById("inputB").value = "";
+  document.getElementById("inputC").value = "";
+
+  let blankCount = Math.random() < 0.5 ? 1 : 2;
+  if (blankCount === 1) {
+    let choice = ["A","B","C"][Math.floor(Math.random()*3)];
+    blanks.push(choice);
+  } else {
+    blanks = ["B","C"];
+  }
+
+  if (!blanks.includes("A")) document.getElementById("inputA").value = currentA;
+  if (!blanks.includes("B")) document.getElementById("inputB").value = currentB;
+  if (!blanks.includes("C")) document.getElementById("inputC").value = currentC;
+
+  document.getElementById("bondDisplay").textContent = 
+    `Number bond: ${currentA} = ${currentB} + ${currentC}`;
+}
+
 function checkAnswer() {
-  if (attemptDone) return;
-  attemptDone = true;
-  document.getElementById("checkBtn").disabled = true;
-  document.getElementById("nextBtn").disabled = false;
+  if (attempted) return;
+  attempted = true;
 
-  let leftVal = parseInt(document.getElementById("leftInput").value);
-  let rightVal = parseInt(document.getElementById("rightInput").value);
+  let valA = document.getElementById("inputA").value;
+  let valB = document.getElementById("inputB").value;
+  let valC = document.getElementById("inputC").value;
 
-  if (isNaN(leftVal) || isNaN(rightVal) || leftVal < 0 || rightVal < 0) {
-    document.getElementById("feedback").textContent = "❌ Please enter valid whole numbers.";
-    streak = 0;
-    updateStreak();
-    document.getElementById("wrongSound").play();
+  if (valA === "" || valB === "" || valC === "") {
+    document.getElementById("message").textContent = "Fill in all blanks!";
+    attempted = false;
     return;
   }
 
-  if (leftVal + rightVal === currentSum) {
-    document.getElementById("feedback").textContent = "✅ Correct!";
+  valA = parseInt(valA);
+  valB = parseInt(valB);
+  valC = parseInt(valC);
+
+  if (valA < 1 || valB < 0 || valC < 0) {
+    document.getElementById("message").textContent = "Only whole numbers >0 for total!";
+    attempted = false;
+    return;
+  }
+
+  if (valB + valC === valA) {
+    correctSound.play();
+    document.getElementById("message").textContent = "Correct!";
     streak++;
-    updateStreak();
-    document.getElementById("correctSound").play();
+    document.getElementById("streak").textContent = "Streak: " + streak;
     moveCar();
   } else {
-    document.getElementById("feedback").textContent = "❌ Wrong. Try again next time.";
-    showSolutions();
+    wrongSound.play();
+    document.getElementById("message").textContent = "Try again!";
     streak = 0;
-    updateStreak();
-    document.getElementById("wrongSound").play();
+    document.getElementById("streak").textContent = "Streak: 0";
+    if (mode === "challenge") {
+      carPosition = 0;
+      stepsRemaining = totalSteps;
+      updateCountdown();
+      document.getElementById("car").style.left = "0px";
+    }
   }
+
+  document.getElementById("nextBtn").disabled = false;
 }
 
-// Show all solutions
-function showSolutions() {
-  let sols = [];
-  for (let i=0; i<=currentSum; i++) {
-    sols.push(`${currentSum} = ${i} + ${currentSum-i}`);
-  }
-  document.getElementById("solutions").textContent = sols.join("\n");
-}
-
-// Update streak display
-function updateStreak() {
-  document.getElementById("streak").textContent = "Streak: " + streak;
-}
-
-// Move car
 function moveCar() {
-  let car = document.getElementById("car");
-  let road = document.querySelector(".road-container");
-  let maxDistance = road.offsetWidth - 60; // leave space
-  carProgress++;
-  let newLeft = (carProgress / steps) * maxDistance;
-  car.style.left = newLeft + "px";
+  carPosition++;
+  stepsRemaining = totalSteps - carPosition;
+  updateCountdown();
+  let trackWidth = document.getElementById("track").offsetWidth - 70;
+  let stepSize = trackWidth / totalSteps;
+  let newLeft = carPosition * stepSize;
+  document.getElementById("car").style.left = newLeft + "px";
 
-  if (carProgress >= steps) {
-    car.classList.add("celebrate");
+  if (carPosition >= totalSteps) {
+    cheerSound.play();
+    document.getElementById("message").textContent = "🎉 Congratulations! You reached the finish line!";
+    document.getElementById("nextBtn").disabled = true;
+    document.getElementById("restartBtn").style.display = "inline-block";
   }
 }
 
-// End game
-function endGame() {
-  alert("Thanks for playing! Your best streak was " + streak);
-  location.reload();
+function updateCountdown() {
+  document.getElementById("countdown").textContent = stepsRemaining + " steps to finish";
+}
+
+function restartGame() {
+  document.getElementById("restartBtn").style.display = "none";
+  document.getElementById("message").textContent = "";
+  startGame(mode);
 }
 </script>
+
 </body>
 </html>
